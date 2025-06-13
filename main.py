@@ -1,33 +1,20 @@
-import os
-import shutil
+import streamlit as st
 from fastapi import FastAPI, UploadFile, File
-from fastapi.responses import HTMLResponse
-from fastapi.staticfiles import StaticFiles
+import requests
+import os
 
-app = FastAPI()
+st.set_page_config(page_title="SpyDash", layout="wide")
+st.title("🕵️ SpyDash - Painel de Monitoramento")
 
-# Diretório onde os arquivos capturados serão armazenados
-UPLOAD_DIR = "uploads"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+st.markdown("### 📡 Capturas em tempo real")
+st.write("Este painel exibirá capturas de teclado, áudio e prints do sistema monitorado.")
 
-# Tornar os arquivos acessíveis via navegador
-app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+# Simulação de capturas (exemplo estático)
+st.subheader("📸 Última captura de tela:")
+st.image("https://placekitten.com/600/300", caption="Print de exemplo")
 
-@app.get("/")
-def home():
-    arquivos = os.listdir(UPLOAD_DIR)
-    lista_html = "".join(
-        f"<li><a href='/uploads/{arq}' target='_blank'>{arq}</a></li>" for arq in arquivos
-    )
-    return HTMLResponse(f"""
-    <h1>🕵️ SpyDash - Painel de Monitoramento</h1>
-    <h3>📡 Capturas Recebidas</h3>
-    <ul>{lista_html}</ul>
-    """)
+st.subheader("🎤 Último áudio recebido:")
+st.audio("https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3")
 
-@app.post("/upload")
-async def upload(file: UploadFile = File(...)):
-    destino = os.path.join(UPLOAD_DIR, file.filename)
-    with open(destino, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-    return {"status": "ok", "filename": file.filename}
+st.subheader("⌨️ Últimas teclas digitadas:")
+st.code("usuario digitou: senha123", language="text")
