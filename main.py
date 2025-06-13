@@ -1,20 +1,32 @@
 import streamlit as st
-from fastapi import FastAPI, UploadFile, File
-import requests
 import os
 
+# === Função de autenticação simples ===
+def autenticar(usuario, senha):
+    return usuario == "admin" and senha == "1234"
+
+# === Controle de sessão para login ===
+if "autenticado" not in st.session_state:
+    st.session_state.autenticado = False
+
+# === Tela de login ===
+if not st.session_state.autenticado:
+    st.set_page_config(page_title="Login - SpyDash")
+    st.title("🔐 Login - SpyDash")
+
+    usuario = st.text_input("Usuário")
+    senha = st.text_input("Senha", type="password")
+
+    if st.button("Entrar"):
+        if autenticar(usuario, senha):
+            st.session_state.autenticado = True
+            st.experimental_rerun()
+        else:
+            st.error("Usuário ou senha incorretos.")
+    st.stop()
+
+# === Painel principal após login ===
 st.set_page_config(page_title="SpyDash", layout="wide")
 st.title("🕵️ SpyDash - Painel de Monitoramento")
-
-st.markdown("### 📡 Capturas em tempo real")
+st.markdown("### Capturas em tempo real")
 st.write("Este painel exibirá capturas de teclado, áudio e prints do sistema monitorado.")
-
-# Simulação de capturas (exemplo estático)
-st.subheader("📸 Última captura de tela:")
-st.image("https://placekitten.com/600/300", caption="Print de exemplo")
-
-st.subheader("🎤 Último áudio recebido:")
-st.audio("https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3")
-
-st.subheader("⌨️ Últimas teclas digitadas:")
-st.code("usuario digitou: senha123", language="text")
